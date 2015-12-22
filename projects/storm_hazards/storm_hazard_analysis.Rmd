@@ -25,20 +25,19 @@ Questions:
 
 # Data Processing
 
-<!--
-TODO: Your analysis must start from the raw CSV file containing the data. You cannot do any preprocessing outside the document.
-TODO_optional: cache = TRUE
--->
+## Load data
 
-..
-
-```{r}
+```{r, cache=TRUE}
 # Retrieve and read data
 if(!file.exists("stormdata.csv.bz2")){
     download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "stormdata.csv.bz2", method="curl")
 }
 df.stormdata <- read.csv("stormdata.csv.bz2")
 ```
+
+## Exploratory analysis
+
+
 
 
 # Results
