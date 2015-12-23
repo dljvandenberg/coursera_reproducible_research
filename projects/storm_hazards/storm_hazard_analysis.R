@@ -1,36 +1,53 @@
-### Storm hazard data analysis
+#### Storm hazard data analysis
 
 
-## Libraries
+### Libraries
 library(lattice)
 library(ggplot2)
 library(dplyr)
 
 
-## Retrieve and read data
+### Retrieve and read data
+
 if(!file.exists("stormdata.csv.bz2")){
     download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "stormdata.csv.bz2", method="curl")
 }
 df.stormdata <- read.csv("stormdata.csv.bz2")
 
 
-## Data cleaning & selection strategy
+### Data cleaning & selection strategy
 
-# TODO: use amatch() from stringdist package to match EVTYPE strings to table 2.1.1 entries
-# in https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf
+# Select relevant fields: BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP
+df.stormdata.subset <- subset(df.stormdata, select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+
+## Check data quality
+
+summary(df.stormdata.subset)
+
+# Check EVTYPE categories matching official categories
+sort(unique(df.stormdata.subset$EVTYPE))
+length(unique(df.stormdata.subset$EVTYPE))
+
+# Check NAs
+sum(is.na(df.stormdata.subset))
+
+# Check PROPDMGEXP and CROPDMGEXP consistent values
+sort(unique(df.stormdata.subset$PROPDMGEXP))
+df.stormdata.subset[df.stormdata.subset$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),]
+# => Strange values for PROPDMGEXP only between 1993 and 1995
+
+df.stormdata.subset[df.stormdata.subset$PROPDMGEXP %in% c("B"),]
+
+sort(unique(df.stormdata.subset$CROPDMGEXP))
+df.stormdata.subset[df.stormdata.subset$CROPDMGEXP %in% c("?", "0", "2"),]
+dim(df.stormdata.subset[df.stormdata.subset$CROPDMGEXP %in% c("?", "0", "2"),])
+# => 27 strange values for CROPDMGEXP, only between 1993 and 1995 => Remove these from dataset?
 
 
-# TODO: convert 'PROPDMG' and 'PROPDMGEXP' to damage_property  Ex: 10.00K, 0.00K, 10.00M. Similarly, for CROPDMG
-# See http://www1.ncdc.noaa.gov/pub/data/swdi/stormevents/csvfiles/Storm-Data-Export-Format.docx
+# 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
 
-# field names: https://ire.org/media/uploads/files/datalibrary/samplefiles/Storm%20Events/layout08.doc, https://class.coursera.org/repdata-035/forum/thread?thread_id=51
+# Convert BGN_DATE to POSIXct type
 
-# multiplier_table <- c("0" = 1, "K" = 1000, "M" = 1000000, "B" = 1000000000)
-# data$damage * multiplier_table[data$multiplier]
-
-# Only choose last decade?
-
-# https://class.coursera.org/repdata-035/forum/thread?thread_id=35: In the interest of reproducible research you might want to programmatically extract the 48 officially recognised weather event types as defined in National Weather Service Instruction (NWS-I10-1605).
 
 
 
