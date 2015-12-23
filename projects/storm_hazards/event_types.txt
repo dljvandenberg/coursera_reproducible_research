@@ -1,8 +1,9 @@
+EVENT_TYPE
 Astronomical Low Tide
 Avalanche
 Blizzard
 Coastal Flood
-Cold/Windhill
+Cold/Wind Chill
 Debris Flow
 Dense Fog
 Dense Smoke
@@ -10,11 +11,11 @@ Drought
 Dust Devil
 Dust Storm
 Excessive Heat
-Extremeold/Windhill
+Extreme Cold/Wind Chill
 Flash Flood
 Flood
 Frost/Freeze
-Funnelloud
+Funnel Cloud
 Freezing Fog
 Hail
 Heat
@@ -22,6 +23,8 @@ Heavy Rain
 Heavy Snow
 High Surf
 High Wind
+Designator
+Event Name
 Hurricane (Typhoon)
 Ice Storm
 Lake-Effect Snow
@@ -31,7 +34,7 @@ Marine Hail
 Marine High Wind
 Marine Strong Wind
 Marine Thunderstorm Wind
-Ripurrent
+Rip Current
 Seiche
 Sleet
 Storm Surge/Tide
@@ -45,4 +48,4 @@ Volcanic Ash
 Waterspout
 Wildfire
 Winter Storm
-Winter Weather 
+Winter Weather
