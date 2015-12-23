@@ -5,6 +5,7 @@
 library(lattice)
 library(ggplot2)
 library(dplyr)
+library(lubridate)
 
 
 ### Retrieve and read data
@@ -17,12 +18,52 @@ df.stormdata <- read.csv("stormdata.csv.bz2")
 
 ### Data cleaning & selection strategy
 
+# Convert BGN_DATE to POSIXct type
+df.stormdata$BGN_DATE <- mdy_hms(df.stormdata$BGN_DATE)
+
 # Select relevant fields: BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP
-df.stormdata.subset <- subset(df.stormdata, select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+df.stormdata.subset.alltime <- subset(df.stormdata, select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+
 
 ## Check data quality
 
+summary(df.stormdata.subset.alltime)
+
+# Check BGN_DATE
+hist(year(df.stormdata.subset.alltime$BGN_DATE))
+
+# Check EVTYPE categories matching official categories
+sort(unique(df.stormdata.subset.alltime$EVTYPE))
+length(unique(df.stormdata.subset.alltime$EVTYPE))
+# => Many more categories (985) than expected because of non-consistent spelling
+
+# Check NAs
+sum(is.na(df.stormdata.subset.alltime))
+# => No NA values
+
+# Check PROPDMGEXP and CROPDMGEXP consistent values and potential outliers
+sort(unique(df.stormdata.subset.alltime$PROPDMGEXP))
+df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),]
+# => Strange values for PROPDMGEXP only between 1993 and 1995
+df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("B"),]
+# => Is this entry correct?
+# 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
+sort(unique(df.stormdata.subset.alltime$CROPDMGEXP))
+df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),]
+dim(df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),])
+# => 27 strange values for CROPDMGEXP, only between 1993 and 1995 => Remove these from dataset?
+df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("B"),]
+
+# Check empty strings in PROPDMGEXP and CROPDMGEXP
+
+
+# Select subset in 10-year date range
+df.stormdata.subset <- subset(df.stormdata, BGN_DATE > ymd("1995-12-31") & BGN_DATE < ymd("2006-01-01"), select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+
 summary(df.stormdata.subset)
+
+# Check BGN_DATE
+hist(year(df.stormdata.subset$BGN_DATE))
 
 # Check EVTYPE categories matching official categories
 sort(unique(df.stormdata.subset$EVTYPE))
@@ -30,24 +71,24 @@ length(unique(df.stormdata.subset$EVTYPE))
 
 # Check NAs
 sum(is.na(df.stormdata.subset))
+# => No NA values
 
-# Check PROPDMGEXP and CROPDMGEXP consistent values
+# Check PROPDMGEXP and CROPDMGEXP consistent values and potential outliers
 sort(unique(df.stormdata.subset$PROPDMGEXP))
 df.stormdata.subset[df.stormdata.subset$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),]
-# => Strange values for PROPDMGEXP only between 1993 and 1995
-
+summary(df.stormdata.subset[df.stormdata.subset$PROPDMGEXP=="", "PROPDMG"])
 df.stormdata.subset[df.stormdata.subset$PROPDMGEXP %in% c("B"),]
-
 sort(unique(df.stormdata.subset$CROPDMGEXP))
 df.stormdata.subset[df.stormdata.subset$CROPDMGEXP %in% c("?", "0", "2"),]
 dim(df.stormdata.subset[df.stormdata.subset$CROPDMGEXP %in% c("?", "0", "2"),])
-# => 27 strange values for CROPDMGEXP, only between 1993 and 1995 => Remove these from dataset?
+summary(df.stormdata.subset[df.stormdata.subset$CROPDMGEXP=="", "CROPDMG"])
+df.stormdata.subset[df.stormdata.subset$CROPDMGEXP %in% c("B"),]
 
-
-# 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
-
-# Convert BGN_DATE to POSIXct type
-
+# Replace PROPDMG * 10^PROPDMGEXP by PROPERTY_DAMAGE and CROPDMG* 10^CROPDMGEXP by CROP_DAMAGE variables
+multiplier_table <- c("0" = 1, "1" = 10, "2" = 100, "3" = 1000, "4" = 10000, "5" = 100000, "6" = 1000000, "7" = 10000000, "8" = 100000000, "H" = 100, "h" = 100, "K" = 1000, "k" = 1000, "M" = 1000000, "m" = 1000000, "B" =1000000000, "b" = 1000000000)
+df.stormdata.subset$PROPERTY_DAMAGE <- df.stormdata.subset$PROPDMG * multiplier_table[droplevels(df.stormdata.subset$PROPDMGEXP)]
+df.stormdata.subset$CROP_DAMAGE <- df.stormdata.subset$CROPDMG * multiplier_table[droplevels(df.stormdata.subset$CROPDMGEXP)]
+df.stormdata.subset <- subset(df.stormdata.subset, select=-c(PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
 
 
 
