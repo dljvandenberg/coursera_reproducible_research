@@ -1,0 +1,48 @@
+Astronomical Low Tide
+Avalanche
+Blizzard
+Coastal Flood
+Cold/Windhill
+Debris Flow
+Dense Fog
+Dense Smoke
+Drought
+Dust Devil
+Dust Storm
+Excessive Heat
+Extremeold/Windhill
+Flash Flood
+Flood
+Frost/Freeze
+Funnelloud
+Freezing Fog
+Hail
+Heat
+Heavy Rain
+Heavy Snow
+High Surf
+High Wind
+Hurricane (Typhoon)
+Ice Storm
+Lake-Effect Snow
+Lakeshore Flood
+Lightning
+Marine Hail
+Marine High Wind
+Marine Strong Wind
+Marine Thunderstorm Wind
+Ripurrent
+Seiche
+Sleet
+Storm Surge/Tide
+Strong Wind
+Thunderstorm Wind
+Tornado
+Tropical Depression
+Tropical Storm
+Tsunami
+Volcanic Ash
+Waterspout
+Wildfire
+Winter Storm
+Winter Weather 
