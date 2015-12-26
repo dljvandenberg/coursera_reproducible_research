@@ -15,38 +15,54 @@ We performed an exploratory analysis of data from the U.S. National Oceanic and 
 
 # Data Processing
 
-## Load libraries
+## Loading libraries and data
 
+For our analysis we need to load the following libraries.
 ```{r}
 library(lattice)
 library(ggplot2)
-library(dplyr)
 library(lubridate)
 library(stringdist)
+suppressMessages(library(dplyr))
 ```
 
-
-## Load data
-
+Data was downloaded from https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2 and we use this as our raw data set.
 ```{r, cache=TRUE}
-### Retrieve data set and file with event types
-setwd("~/git/coursera_reproducible_research/projects/storm_hazards")
 if(!file.exists("stormdata.csv.bz2")){
     download.file("https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2", "stormdata.csv.bz2", method="curl")
 }
 df.stormdata <- read.csv("stormdata.csv.bz2")
-df.eventtypes <- read.csv("event_types.txt")
+```
+
+Furthermore we load an the official set of event types, extracted from the National Weather Service Storm Data [Documentation](https://d396qusza40orc.cloudfront.net/repdata%2Fpeer2_doc%2Fpd01016005curr.pdf). Its contents are show below.
+```{r}
+df.eventtypes <- read.csv("event_types.txt", stringsAsFactors=FALSE)
+as.list(df.eventtypes)
 ```
 
 
 ## Data cleaning & selecting relevant subset
 
+The raw data set consists of close to a million measurements of 37 variables.
+```{r}
+dim(df.stormdata)
+```
+
+```{r}
+names(df.stormdata)
+```
+
+We first convert
 
 ```{r}
 
 # Convert BGN_DATE to POSIXct type
 df.stormdata$BGN_DATE <- mdy_hms(df.stormdata$BGN_DATE)
+```
 
+
+
+```{r}
 # Select relevant fields: BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP
 df.stormdata.subset.alltime <- subset(df.stormdata, select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
 ```
@@ -72,18 +88,18 @@ sum(is.na(df.stormdata.subset.alltime))
 # Check PROPDMGEXP and CROPDMGEXP consistent values
 
 sort(unique(df.stormdata.subset.alltime$PROPDMGEXP))
-df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),]
+summary(df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),])
 # => Strange values for PROPDMGEXP, all between 1993 and 1995
 sort(unique(df.stormdata.subset.alltime$CROPDMGEXP))
-df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),]
+summary(df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),])
 dim(df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),])
 # => 27 strange values for CROPDMGEXP, all between 1993 and 1995
 
 # Check for potential outliers
-df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("B"),]
+summary(df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("B"),])
 # => Is this entry correct?
 # 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
-df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("B"),]
+summary(df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("B"),])
 ```
 
 
@@ -168,7 +184,9 @@ df.stormdata.subset <- subset(df.stormdata.subset, select=-c(EVTYPE))
 
 # Results
 
-## 1. Across the United States, which types of events are most harmful with respect to population health ("FATALITIES", "INJURIES")?
+## Weather impact on Population Health
+
+Across the United States, which types of events are most harmful with respect to population health?
 
 ```{r}
 df.fatalities <- aggregate(FATALITIES ~ EVENT_TYPE, data = df.stormdata.subset, sum)
@@ -187,7 +205,9 @@ barchart(FATALITIES + INJURIES ~ EVENT_TYPE, data=df.fatalities.injuries.top.sum
 ```
 
 
-## 2. Across the United States, which types of events have the greatest economic consequences?
+## Economic consequences of bad weather
+
+Across the United States, which types of events have the greatest economic consequences?
 
 ```{r}
 df.property.damage <- aggregate(PROPERTY_DAMAGE ~ EVENT_TYPE, data = df.stormdata.subset, sum)
