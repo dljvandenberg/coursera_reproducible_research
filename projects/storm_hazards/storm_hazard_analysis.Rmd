@@ -1,20 +1,17 @@
 ---
-title: "Storm Hazard Analysis"
+title: "Fatalities, Injuries and Economic Damage due to Weather Events"
 author: "Dennis van den Berg"
 date: "22/12/2015"
-output: html_document
+output:
+  html_document:
+    fig_width: 10
+    fig_caption: true
 ---
 
 
 # Synopsis
 
-We performed an exploratory analysis of data from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database in order to address the following questions: Across the United States, a) which types of events are most harmful with respect to population health in terms of fatalities and injuries, and b) which types of events have the greatest economic consequences in terms of property and crop damage? We looked at absolute effects summed per event type across all of the United States in [time period .. to ..].
-[results..] Determined the top 10 event categories measured in terms of fatalities, injuries, property damage, crop damage
-[discussion/in-depth] Investigate average/median damage per event type and its variability (boxplot!). Investigate number of events withing event types (boxplot per year -> shows variability)
-
-Excessive Heat, Tornadoes, Flash Floods and Lightning are most fatal and Tornadoes, Floods, Excessive Heat and Thunderstorm Winds cause most injuries.
-
-Thunderstorm Winds, Flash Floods, Tornadoes and Hail cause most economic damage, that damage to property is overall much higher than to crops and that the biggest contributor to crop damage is Hail.
+We performed an exploratory analysis of data from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database in order to address the following questions: a) Which types of weather events are most harmful with respect to population health, and b) which have the greatest economic consequences? We looked at absolute effects summed per event type across all of the United States in time period 1996 to 2010. We determined the top 10 event categories measured in terms of fatalities, injuries, and property/crop damage and found the following: Excessive Heat, Tornadoes, Flash Floods and Lightning are most fatal. Tornadoes, Floods, Excessive Heat and Thunderstorm Winds cause most injuries. Thunderstorm Winds, Flash Floods, Tornadoes and Hail cause most economic damage. Furthermore, damage to property is overall much higher than to crops and that the biggest contributor to crop damage is Hail.
 
 
 # Data Processing
@@ -173,7 +170,7 @@ df.fatalities.injuries %>% arrange(desc(INJURIES)) %>% head(10)
 ```
 
 Visualizing these results shows clearly that Excessive Heat, Tornadoes, Flash Floods and Lightning are most fatal and Tornadoes, Floods, Excessive Heat and Thunderstorm Winds cause most injuries.
-```{r, fig.width=10}
+```{r, fig.cap="Figure 1: Total number of fatalities (turquoise) and injuries (pink) per type of weather event in the USA between 1996 and 2010."}
 df.fatalities.injuries.top.sum <- df.fatalities.injuries %>% arrange(desc(SUM.FATALATIES.INJURIES)) %>% head(10)
 barchart(FATALITIES + INJURIES ~ EVENT_TYPE, data=df.fatalities.injuries.top.sum, ylab="Number of people", main="Fatalities and Injuries by Weather Type")
 ```
@@ -195,7 +192,7 @@ df.economic.damage %>% arrange(desc(TOTAL.DAMAGE)) %>% head(10)
 
 Visualizing these results we see that Thunderstorm Winds, Flash Floods, Tornadoes and Hail cause most economic damage, that damage to property is overall much higher than to crops and that the biggest contributor to crop damage is Hail.
 
-```{r, fig.width=10}
+```{r, fig.cap="Figure 2: Total economic damage in terms of property (turquoise) and crops (pink) caused by different types of weather event, measured in the USA between 1996 and 2010."}
 df.economic.damage.top.sum <- df.economic.damage %>% arrange(desc(TOTAL.DAMAGE)) %>% head(10)
 barchart(PROPERTY_DAMAGE + CROP_DAMAGE ~ EVENT_TYPE, data=df.economic.damage.top.sum, ylab="Damage (USD)", main="Economic Damage by Weather Type")
 ```
