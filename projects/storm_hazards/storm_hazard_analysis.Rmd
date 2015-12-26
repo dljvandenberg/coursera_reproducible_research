@@ -12,6 +12,10 @@ We performed an exploratory analysis of data from the U.S. National Oceanic and 
 [results..] Determined the top 10 event categories measured in terms of fatalities, injuries, property damage, crop damage
 [discussion/in-depth] Investigate average/median damage per event type and its variability (boxplot!). Investigate number of events withing event types (boxplot per year -> shows variability)
 
+Excessive Heat, Tornadoes, Flash Floods and Lightning are most fatal and Tornadoes, Floods, Excessive Heat and Thunderstorm Winds cause most injuries.
+
+Thunderstorm Winds, Flash Floods, Tornadoes and Hail cause most economic damage, that damage to property is overall much higher than to crops and that the biggest contributor to crop damage is Hail.
+
 
 # Data Processing
 
@@ -100,7 +104,7 @@ df.stormdata.clean <- subset(df.stormdata, BGN_DATE > ymd("1995-12-31") & BGN_DA
 ```
 
 
-## Convert Property Damage and Crop Damage amounts
+## Convert property and crop damage amounts
 
 We introduce new variables `PROPERTY_DAMAGE` and `CROP_DAMAGE` (calculated from `PROPDMG * 10^PROPDMGEXP` and `CROPDMG * 10^CROPDMGEXP` respectively) and drop the old ones.
 ```{r}
@@ -111,7 +115,7 @@ df.stormdata.clean <- subset(df.stormdata.clean, select=-c(PROPDMG, PROPDMGEXP, 
 ```
 
 
-## Clean up Event Types
+## Clean up event types
 
 We try to clean up the `EVTYPE` values by first converting them to lowercase (to prevent upper/lower mismatch) and adding a few manual substitution rules:
 ```{r}
@@ -132,62 +136,66 @@ df.stormdata.clean$EVTYPE <- gsub("^record warmth$|^recored heat$", "excessive h
 df.stormdata.clean$EVTYPE <- gsub("wintry", "winter", df.stormdata.clean$EVTYPE)
 ```
 
-And subsequently trying to matching the raw `EVTYPE` to the officially used `eventtypes` that we defined above (correcting for small string differences):
+And subsequently trying to matching the raw `EVTYPE` to the officially used `eventtypes` that we defined above (correcting for small string differences). We use factor level `UNKNOWN` for an unmatched event type.
 
 ```{r}
 df.stormdata.clean$EVENT_TYPE <- eventtypes[amatch(tolower(df.stormdata.clean$EVTYPE), tolower(eventtypes), maxDist=3, nomatch=NA)]
+levels(df.stormdata.clean$EVENT_TYPE) <- c(levels(df.stormdata.clean$EVENT_TYPE), "UNKNOWN")
+df.stormdata.clean$EVENT_TYPE[is.na(df.stormdata.clean$EVENT_TYPE)] <- "UNKNOWN"
+df.stormdata.clean <- subset(df.stormdata.clean, select=-c(EVTYPE))
 ```
 
-
+This results in `r round(sum(df.stormdata.clean$EVENT_TYPE=="UNKNOWN")/length(df.stormdata.clean$EVENT_TYPE) * 100, 2)`% of all entries having event type `UNKNOWN`, which we certainly consider acceptable.
 ```{r}
-# Use "OTHER" factor level for unmatched EVENT_TYPE
-levels(df.stormdata.clean$EVENT_TYPE) <- c(levels(df.stormdata.clean$EVENT_TYPE), "OTHER")
-df.stormdata.clean$EVENT_TYPE[is.na(df.stormdata.clean$EVENT_TYPE)] <- "OTHER"
-
-# EVENT_TYPE "OTHER" is less than 2% of all entries
-sum(df.stormdata.clean$EVENT_TYPE=="OTHER")/length(df.stormdata.clean$EVENT_TYPE)
-
-# For unmatched EVENT_TYPE, list by raw EVTYPE and take top sorted by number of INJURIES
-aggregate(INJURIES ~ EVTYPE, data=df.stormdata.clean[df.stormdata.clean$EVENT_TYPE=="OTHER",], FUN=length) %>% arrange(desc(INJURIES)) %>% head(10)
-
-# Drop EVTYPE column
-df.stormdata.clean <- subset(df.stormdata.clean, select=-c(EVTYPE))
+sum(df.stormdata.clean$EVENT_TYPE=="UNKNOWN")/length(df.stormdata.clean$EVENT_TYPE)
 ```
 
 
 # Results
 
-## Weather impact on Population Health
+## Harmful weather events for population health
 
-Across the United States, which types of events are most harmful with respect to population health?
-
+Aggregating the number of fatalities and injuries per event type:
 ```{r}
 df.fatalities <- aggregate(FATALITIES ~ EVENT_TYPE, data = df.stormdata.clean, sum)
 df.injuries <- aggregate(INJURIES ~ EVENT_TYPE, data = df.stormdata.clean, sum)
 df.fatalities.injuries <- merge(df.fatalities, df.injuries) %>% mutate(SUM.FATALATIES.INJURIES = FATALITIES + INJURIES)
+```
 
-# Top 10 event types by fatalities and injuries respectively
+We find a top 10 event types in terms of fatalities:
+```{r}
 df.fatalities.injuries %>% arrange(desc(FATALITIES)) %>% head(10)
+```
+
+And a top 10 event types causing most injuries:
+```{r}
 df.fatalities.injuries %>% arrange(desc(INJURIES)) %>% head(10)
+```
 
-# Plot fatalities and injuries in barplot for top categories
+Visualizing these results shows clearly that Excessive Heat, Tornadoes, Flash Floods and Lightning are most fatal and Tornadoes, Floods, Excessive Heat and Thunderstorm Winds cause most injuries.
+```{r, fig.width=10}
 df.fatalities.injuries.top.sum <- df.fatalities.injuries %>% arrange(desc(SUM.FATALATIES.INJURIES)) %>% head(10)
-barchart(FATALITIES + INJURIES ~ EVENT_TYPE, data=df.fatalities.injuries.top.sum, ylab="Number of people", main="Population health consequences per type")
-
-#ggplot(df.fatalities.injuries.top.sum, aes(x = EVENT_TYPE, y = FATALITIES)) + geom_bar(stat = "identity", position = "stack")
+barchart(FATALITIES + INJURIES ~ EVENT_TYPE, data=df.fatalities.injuries.top.sum, ylab="Number of people", main="Fatalities and Injuries by Weather Type")
 ```
 
 
-## Economic consequences of bad weather
+## Economic consequences of bad weather events
 
-Across the United States, which types of events have the greatest economic consequences?
-
+Aggregating the amount of property and crop damage per event type:
 ```{r}
 df.property.damage <- aggregate(PROPERTY_DAMAGE ~ EVENT_TYPE, data = df.stormdata.clean, sum)
 df.crop.damage <- aggregate(CROP_DAMAGE ~ EVENT_TYPE, data = df.stormdata.clean, sum)
 df.economic.damage <- merge(df.property.damage, df.crop.damage) %>% mutate(TOTAL.DAMAGE = PROPERTY_DAMAGE + CROP_DAMAGE)
+```
 
-# Plot damage in barplot for top categories
+We find a top 10 event types in terms of total damage:
+```{r}
+df.economic.damage %>% arrange(desc(TOTAL.DAMAGE)) %>% head(10)
+```
+
+Visualizing these results we see that Thunderstorm Winds, Flash Floods, Tornadoes and Hail cause most economic damage, that damage to property is overall much higher than to crops and that the biggest contributor to crop damage is Hail.
+
+```{r, fig.width=10}
 df.economic.damage.top.sum <- df.economic.damage %>% arrange(desc(TOTAL.DAMAGE)) %>% head(10)
-barchart(PROPERTY_DAMAGE + CROP_DAMAGE ~ EVENT_TYPE, data=df.economic.damage.top.sum, ylab="Damage", main="Economic consequences per type")
+barchart(PROPERTY_DAMAGE + CROP_DAMAGE ~ EVENT_TYPE, data=df.economic.damage.top.sum, ylab="Damage (USD)", main="Economic Damage by Weather Type")
 ```
