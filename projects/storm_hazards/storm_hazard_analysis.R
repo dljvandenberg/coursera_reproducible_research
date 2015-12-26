@@ -47,24 +47,28 @@ length(unique(df.stormdata.subset.alltime$EVTYPE))
 sum(is.na(df.stormdata.subset.alltime))
 # => No NA values
 
-# Check PROPDMGEXP and CROPDMGEXP consistent values and potential outliers
+# Check PROPDMGEXP and CROPDMGEXP consistent values
+
 sort(unique(df.stormdata.subset.alltime$PROPDMGEXP))
 df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("-", "?", "+", "h", "H", "0", "1", "2"),]
-# => Strange values for PROPDMGEXP only between 1993 and 1995
-df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("B"),]
-# => Is this entry correct?
-# 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
+# => Strange values for PROPDMGEXP, all between 1993 and 1995
 sort(unique(df.stormdata.subset.alltime$CROPDMGEXP))
 df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),]
 dim(df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("?", "0", "2"),])
-# => 27 strange values for CROPDMGEXP, only between 1993 and 1995 => Remove these from dataset?
+# => 27 strange values for CROPDMGEXP, all between 1993 and 1995
+
+# Check for potential outliers
+df.stormdata.subset.alltime[df.stormdata.subset.alltime$PROPDMGEXP %in% c("B"),]
+# => Is this entry correct?
+# 605953   1/1/2006 0:00:00                      FLOOD          0        0  115.00          B   32.50          M
 df.stormdata.subset.alltime[df.stormdata.subset.alltime$CROPDMGEXP %in% c("B"),]
 
 
 ## Select data subset
 
-# Select subset in 10-year date range
-df.stormdata.subset <- subset(df.stormdata, BGN_DATE > ymd("1995-12-31") & BGN_DATE < ymd("2006-01-01"), select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+# Select subset in specific date range (after 1995 because of unreliable data, before 2011 because 2011 data is incomplete)
+#df.stormdata.subset <- subset(df.stormdata, BGN_DATE > ymd("1995-12-31") & BGN_DATE < ymd("2006-01-01"), select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
+df.stormdata.subset <- subset(df.stormdata, BGN_DATE > ymd("1995-12-31") & BGN_DATE < ymd("2011-01-01"), select=c(BGN_DATE, EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP))
 
 # summary(df.stormdata.subset)
 # 
@@ -99,21 +103,23 @@ df.stormdata.subset <- subset(df.stormdata.subset, select=-c(PROPDMG, PROPDMGEXP
 
 ## Clean up EVTYPE levels
 
+# Convert to lowercase to prevent upper/lowercase mismatch
+df.stormdata.subset$EVTYPE <- tolower(df.stormdata.subset$EVTYPE)
 # Manual rules for EVTYPEs with many injuries
-df.stormdata.subset$EVTYPE <- gsub("TSTM", "Thunderstorm", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^WILD/FOREST FIRE$", "Wildfire", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^THUNDERSTORM WIND/HAIL$", "Hail", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^WINTER WEATHER/MIX$", "Winter Weather", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^EXTREME COLD$", "Extreme Cold/Wind Chill", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^SNOW$", "Heavy Snow", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^WIND$", "Strong Wind", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^STORM SURGE$", "Storm Surge/Tide", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^LANDSLIDE$", "Debris Flow", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^HEAVY SURF/HIGH SURF$", "High Surf", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^EXTREME WINDCHILL$", "Extreme Cold/Wind Chill", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^HURRICANE$", "Hurricane (Typhoon)", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("^RECORD WARMTH$|^RECORD HEAT$", "Excessive Heat", df.stormdata.subset$EVTYPE)
-df.stormdata.subset$EVTYPE <- gsub("WINTRY", "Winter", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("tstm", "thunderstorm", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^wild/forest fire$", "wildfire", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^thunderstorm wind/hail$", "hail", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^winter weather/mix$", "winter weather", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^extreme cold$", "extreme cold/wind chill", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^snow$", "heavy snow", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^wind$", "strong wind", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^storm surge$", "storm surge/tide", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^landslide$", "debris flow", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^heavy surf/high surf$", "high surf", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^extreme windchill$", "extreme cold/wind chill", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^hurricane$", "hurricane (typhoon)", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("^record warmth$|^recored heat$", "excessive heat", df.stormdata.subset$EVTYPE)
+df.stormdata.subset$EVTYPE <- gsub("wintry", "winter", df.stormdata.subset$EVTYPE)
 
 # Try to match raw EVTYPE to correct EVENT_TYPE and add as new column to df.stormdata.subset
 df.stormdata.subset$EVENT_TYPE <- df.eventtypes$EVENT_TYPE[amatch(tolower(df.stormdata.subset$EVTYPE), tolower(df.eventtypes$EVENT_TYPE), maxDist=3, nomatch=NA)]
@@ -124,12 +130,9 @@ df.stormdata.subset$EVENT_TYPE[is.na(df.stormdata.subset$EVENT_TYPE)] <- "OTHER"
 # EVENT_TYPE "OTHER" is less than 2% of all entries
 sum(df.stormdata.subset$EVENT_TYPE=="OTHER")/length(df.stormdata.subset$EVENT_TYPE)
 
-# For unmatched EVENT_TYPE, list by raw EVTYPE and take top 30 sorted by number of INJURIES
-aggregate(INJURIES ~ EVTYPE, data=df.stormdata.subset[df.stormdata.subset$EVENT_TYPE=="OTHER",], FUN=length) %>% arrange(desc(INJURIES)) %>% head(30)
+# For unmatched EVENT_TYPE, list by raw EVTYPE and take top sorted by number of INJURIES
+aggregate(INJURIES ~ EVTYPE, data=df.stormdata.subset[df.stormdata.subset$EVENT_TYPE=="OTHER",], FUN=length) %>% arrange(desc(INJURIES)) %>% head(10)
 
-
-# TODO: make sure result is acceptable (number of OTHER as part of whole)
-# TODO: tweak maxDist
 
 # Drop EVTYPE column
 df.stormdata.subset <- subset(df.stormdata.subset, select=-c(EVTYPE))
@@ -153,6 +156,8 @@ df.fatalities.injuries.top.sum <- df.fatalities.injuries %>% arrange(desc(SUM.FA
 barchart(FATALITIES + INJURIES ~ EVENT_TYPE, data=df.fatalities.injuries.top.sum, ylab="Number of people", main="Population health consequences per type")
 
 # TODO: handle OTHER better in this graph!
+# TODO: legend (ggplot?)
+# TODO_optional: sort on highest damage
 
 #ggplot(df.fatalities.injuries.top.sum, aes(x = EVENT_TYPE, y = FATALITIES)) + geom_bar(stat = "identity", position = "stack")
 
@@ -166,4 +171,5 @@ df.economic.damage <- merge(df.property.damage, df.crop.damage) %>% mutate(TOTAL
 # Plot damage in barplot for top categories
 df.economic.damage.top.sum <- df.economic.damage %>% arrange(desc(TOTAL.DAMAGE)) %>% head(10)
 barchart(PROPERTY_DAMAGE + CROP_DAMAGE ~ EVENT_TYPE, data=df.economic.damage.top.sum, ylab="Damage", main="Economic consequences per type")
+
 
